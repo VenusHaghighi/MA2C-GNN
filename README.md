@@ -18,5 +18,6 @@ This is the Pytorch implementation of Multiple Adaptive Aggregation Channels for
 - dgl-data: Include dgl graph of original datasets, i.e., YelpChi and Amazon. 
      - yelp.dgl: The dgl graph for original data of YelpChi.
      - amazon.dgl: The dgl graph for original data of Amazon.
+- dgl-data-completed: Final dgl graphs of YelpChi and Amazon which contain the outputs of graph-agnostic edge labeling module.
 
 # Model Training
