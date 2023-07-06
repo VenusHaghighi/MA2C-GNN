@@ -48,10 +48,10 @@ class Edge_Labelling(nn.Module):
 
 
 
-class PolyConv(nn.Module):
+class MA2C_GNN_Layer(nn.Module):
     def __init__(self, in_channels, out_channels, d, graph):
         
-        super(PolyConv, self).__init__()
+        super(MA2C_GNN_Layer, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -67,7 +67,7 @@ class PolyConv(nn.Module):
     def forward(self, graph, feat, d):
         
         
-        def unnLaplacian(graph, feat):
+        def Laplacian(graph, feat):
             """ Operation Feat * D^-1/2 A D^-1/2 """
             
             #print("feat:", feat, feat.size())
@@ -78,7 +78,7 @@ class PolyConv(nn.Module):
             return feat - graph.ndata.pop('h') * D_invsqrt
         
         
-        def calculate_theta2(d):
+        def calculate_theta(d):
                thetas = []
                index = int((d+1)/2)
                x = sympy.symbols('x')
@@ -107,7 +107,7 @@ class PolyConv(nn.Module):
                 k = len(LP_filter[i])
                 h = LP_filter[i][0]*feat
                 for j in range(1, k):
-                   temp = unnLaplacian(graph, feat)
+                   temp = Laplacian(graph, feat)
                    h += LP_filter[i][j] * temp
                 out.append(h)
                 #print("out:", out, len(out))
@@ -124,7 +124,7 @@ class PolyConv(nn.Module):
                k = len(HP_filter[i])
                h = HP_filter[i][0]*feat
                for j in range(1, k):
-                  temp = unnLaplacian(graph, feat)
+                  temp = Laplacian(graph, feat)
                   h += HP_filter[i][j] * temp
                out.append(h)
            out = torch.cat(out, -1)
@@ -143,7 +143,7 @@ class PolyConv(nn.Module):
             feat = torch.cat([feat, h2_rate], dim = -1)
             graph.ndata["h"] = feat
             #edgeType = graph.edges['homo'].data['edgeType']
-            thetas, LP_filter, HP_filter = calculate_theta2(d)
+            thetas, LP_filter, HP_filter = calculate_theta(d)
             #print("thetas:", thetas, len(thetas))
             #print("LP_filter:", LP_filter, len(LP_filter))
             #print("HP_filter:", HP_filter, len(HP_filter))
@@ -157,7 +157,7 @@ class PolyConv(nn.Module):
             
  
 
-class BWGNN(nn.Module):
+class MA2C_GNN(nn.Module):
     def __init__(self, in_channels, h_channels, num_classes, graph, d):
         super().__init__()
         self.graph = graph
@@ -169,8 +169,8 @@ class BWGNN(nn.Module):
         self.linear4 = nn.Linear(h_channels, num_classes)
         self.act = nn.ReLU()
         self.d = d
-        self.conv1 = PolyConv(self.in_channels, self.h_channels, self.d, self.graph)
-        self.conv2 = PolyConv(self.h_channels, self.num_classes, self.d, self.graph)
+        self.conv1 = MA2C_GNN_Layer(self.in_channels, self.h_channels, self.d, self.graph)
+        self.conv2 = MA2C_GNN_Layer(self.h_channels, self.num_classes, self.d, self.graph)
 
     def forward(self, graph, feat, d):
         #h = self.linear(feat)

@@ -10,6 +10,7 @@ from model import *
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 from prepare_data import *
+import os
 
 
 
@@ -117,15 +118,15 @@ def train_model(model, graph, args):
         weight = (1-labels[train_mask]).sum().item() / labels[train_mask].sum().item()
         print('cross entropy weight: ', weight)
         time_start = time.time()
-        order = args.order
-        print("order:", order)
+        theta = args.theta
+        print("theta:", theta)
         
        
         
-        for e in range(500):
+        for e in range(1000):
             
             model.train()
-            logits, final_embed = model(graph, features, order)
+            logits, final_embed = model(graph, features, theta)
             loss = F.cross_entropy(logits[train_mask], labels[train_mask], weight=torch.tensor([1., weight]))
             optimizer.zero_grad()
             loss.backward()
@@ -172,22 +173,20 @@ def get_best_f1(labels, probs):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='BWGNN')
+    parser = argparse.ArgumentParser(description='MA2C_GNN')
     parser.add_argument("--dataset", type=str, default="yelp",
-                        help="Dataset for this model (yelp/amazon/tfinance/tsocial)")
+                        help="Dataset for this model (yelp/amazon)")
     parser.add_argument("--train_ratio", type=float, default=0.4, help="Training ratio")
     parser.add_argument("--hid_dim", type=int, default=64, help="Hidden layer dimension")
-    parser.add_argument("--order", type=int, default=3, help="Order C in Beta Wavelet")
-    parser.add_argument("--homo", type=int, default=1, help="1 for BWGNN(Homo) and 0 for BWGNN(Hetero)")
-    parser.add_argument("--epoch", type=int, default=100, help="The max number of epochs")
+    parser.add_argument("--theta", type=int, default=3, help="Order theta in Beta Distribution")
+    parser.add_argument("--epoch", type=int, default=100, help="The max number of epochs for graph_agnostic edge labeling module")
     parser.add_argument("--run", type=int, default=1, help="Running times")
 
     args = parser.parse_args()
     print(args)
     dataset_name = args.dataset
-    dataset_path = 'C:/Users/46665056/Desktop/MAC-GNN-Homo/'+ dataset_name + '_completed'+ '.dgl'
-    homo = args.homo
-    order = args.order
+    dataset_path = os.getcwd() + '\\' + dataset_name + '_completed'+ '.dgl'
+    theta = args.theta
     h_channels = args.hid_dim
     #graph = Dataset(dataset_name).graph
     graph = dgl.load_graphs(dataset_path)[0][0]
@@ -217,7 +216,7 @@ if __name__ == '__main__':
 
     if args.run == 1:
         
-        model = BWGNN(in_channels, h_channels, num_classes, graph, order)
+        model = MA2C_GNN(in_channels, h_channels, num_classes, graph, theta)
         
         final_tmf1, final_tauc, probs, preds, final_embed, test_mask = train_model(model, graph, args)
         
@@ -226,19 +225,4 @@ if __name__ == '__main__':
         torch.save(final_embed, "final_embed.pt")
         torch.save(test_mask, "test_mask.pt")
 
-    # else:
-        
-        
-    #     final_mf1s, final_aucs = [], []
-    #     for tt in range(args.run):
-    #         if homo:
-    #             model = BWGNN(in_feats, h_feats, num_classes, graph, d=order)
-            
-    #         mf1, auc = train(model, graph, args)
-    #         final_mf1s.append(mf1)
-    #         final_aucs.append(auc)
-    #     final_mf1s = np.array(final_mf1s)
-    #     final_aucs = np.array(final_aucs)
-    #     print('MF1-mean: {:.2f}, MF1-std: {:.2f}, AUC-mean: {:.2f}, AUC-std: {:.2f}'.format(100 * np.mean(final_mf1s),
-    #                                                                                         100 * np.std(final_mf1s),
-    #                                                            100 * np.mean(final_aucs), 100 * np.std(final_aucs)))
+   
