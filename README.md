@@ -12,5 +12,8 @@ DGL >>> 1.1.1
 
 # Usage
 - src: Includes all code scripts, i.e., data preparation, model, and training.
+- data: Includes original datasets:
+     - YelpChi.zip
+     - Amazon.zip
 
 # Model Training
