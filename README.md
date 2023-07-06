@@ -4,3 +4,6 @@ This is the Pytorch implementation of Multiple Adaptive Aggregation Channels for
 ![MA2C-GNN Framework](https://github.com/FraudDetectionModel/MA2C-GNN/assets/136766753/d13de2d9-117a-428d-82a1-983ed51e476b)
 
 # Dependencies
+Python >>> 3.10.9
+Pytorch >>> 2.0.1
+DGL >>> 1.1.1
