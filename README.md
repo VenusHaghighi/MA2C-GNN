@@ -12,9 +12,10 @@ This is the Pytorch implementation of Multiple Adaptive Aggregation Channels for
 
 # Usage
 - src: Includes all code scripts, i.e., data preparation, model, and training.
-- data: Includes original datasets and dgl graphs for both datasets:
+- original-data: Includes original datasets and dgl graphs for both datasets:
      - YelpChi.zip: Contains hotel and restaurant reviews filtered (spam) and recommended (legitimate) by Yelp.
      - Amazon.zip: Contains product reviews under the Musical Instruments category.
+- dgl-data: Include dgl graph of original datasets, i.e., YelpChi and Amazon. 
      - yelp.dgl: The dgl graph for original data of YelpChi.
      - amazon.dgl: The dgl graph for original data of Amazon.
 
