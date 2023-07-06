@@ -27,5 +27,6 @@ This is the Pytorch implementation of Multiple Adaptive Aggregation Channels for
 To generate the complete version of dgl graphs (i.e. yelp_completed.dgl and amazon_completed.dgl) we need to run the prepare_data.py and train the graph-agnostic edge labeling module by calling the edgeLabelling_train function from train.py. We put the completed version of trained dgl graphs in dgl-data-completed directory. Therefore, you need to Unzip the yelp_completed.dgl.zip and amazon_completed.dgl.zip from dgl-data-completed directory and move them to the src directory for the training phase.
 
 - We take YelpChi as an example to illustrate the usage of repository:
+    - Run train.py
     - Load the yelp_completed.dgl 
-    - Start training and testing phases by runing train.py
+    - Start training and testing phases 
