@@ -11,6 +11,6 @@ Pytorch >>> 2.0.1
 DGL >>> 1.1.1
 
 # Usage
-- src: All code scripts include data preparation, model, and training.
+- src: Includes all code scripts, i.e., data preparation, model, and training.
 
 # Model Training
