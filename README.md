@@ -5,5 +5,7 @@ This is the Pytorch implementation of Multiple Adaptive Aggregation Channels for
 
 # Dependencies
 Python >>> 3.10.9
+
 Pytorch >>> 2.0.1
+
 DGL >>> 1.1.1
