@@ -13,7 +13,7 @@ DGL >>> 1.1.1
 # Usage
 - src: Includes all code scripts, i.e., data preparation, model, and training.
 - data: Includes original datasets:
-     - YelpChi.zip
-     - Amazon.zip
+     - YelpChi.zip: Contains hotel and restaurant reviews filtered (spam) and recommended (legitimate) by Yelp.
+     - Amazon.zip: Contains product reviews under the Musical Instruments category.
 
 # Model Training
