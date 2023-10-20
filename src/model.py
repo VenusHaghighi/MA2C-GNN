@@ -27,7 +27,7 @@ class Edge_Labelling(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, data):
-        edges = data.edges(etype='homo')
+        edges = data.edges()
         src,dst = edges
     
         f_src = data.ndata['feature'][src.numpy()]
@@ -71,10 +71,10 @@ class MA2C_GNN_Layer(nn.Module):
             """ Operation Feat * D^-1/2 A D^-1/2 """
             
             #print("feat:", feat, feat.size())
-            D_invsqrt = torch.pow((graph.in_degrees(v='__ALL__', etype='homo')+graph.out_degrees(u='__ALL__', etype='homo')).float().clamp(min=1), -0.5).unsqueeze(-1).to(feat.device)
+            D_invsqrt = torch.pow((graph.in_degrees(v='__ALL__')+graph.out_degrees(u='__ALL__')).float().clamp(min=1), -0.5).unsqueeze(-1).to(feat.device)
             #print("D_invsqrt:", D_invsqrt, D_invsqrt.size())
             graph.ndata['h'] = feat * D_invsqrt
-            graph.update_all(fn.copy_u('h', 'm'), fn.sum('m', 'h'), etype ='homo')
+            graph.update_all(fn.copy_u('h', 'm'), fn.sum('m', 'h'))
             return feat - graph.ndata.pop('h') * D_invsqrt
         
         
@@ -91,30 +91,55 @@ class MA2C_GNN_Layer(nn.Module):
                    thetas.append(inv_coeff)
                    # split high pass and Low pass Filters
                LP_filter = thetas[0:index]
+               
+               #print("LP filter:", LP_filter, len(LP_filter))
                HP_filter = thetas[index:d+1]
                return thetas, LP_filter, HP_filter
            
             
         def homo_aggr(feat, LP_filter, graph):
             
-            # print("d", self.d)
-            # print("num_LP", self.num_LP)
-            # print("num_HP", self.num_HP)
+            
             out = []
-            #print("LP:", LP_filter, len(LP_filter))
+            
             feat = feat[:, 0:-1]
             for i in range (len(LP_filter)):
                 k = len(LP_filter[i])
                 h = LP_filter[i][0]*feat
+                
+                
                 for j in range(1, k):
                    temp = Laplacian(graph, feat)
                    h += LP_filter[i][j] * temp
                 out.append(h)
-                #print("out:", out, len(out))
+                
             out = torch.cat(out, -1)
-            #print("out_tensor:", out, out.size())
+           
             out = self.M_LP(out)
             return out
+            
+#        def homo_aggr(feat, LP_filter, graph):
+#            
+#            
+#            out = []
+#            feat = feat[:, 0:-1]
+#            
+#            i = 1
+#            k = 1
+#            h = LP_filter[i]*feat
+#                
+#                
+#                
+#            temp = Laplacian(graph, feat)
+#            h = LP_filter[i] * temp
+#            out.append(h)
+#                
+#            out = torch.cat(out, -1)
+#           
+#            out = self.M_LP(out)
+#            return out
+                
+        
             
         def hetero_aggr(feat, HP_filter, graph):
            

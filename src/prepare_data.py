@@ -9,164 +9,130 @@ from collections import defaultdict
 import random
 
 
-class Dataset:
-    def __init__(self, name='amazon'):
-        self.name = name
-        graph = None
-        
-        if name == 'yelp':
-            
-                dataset = FraudYelpDataset()
-                graph = dataset[0]
-            
-                graph.ndata['label'] = graph.ndata['label'].long().squeeze(-1)
-                graph.ndata['feature'] = graph.ndata['feature'].float()
-                print(graph)
-
-                feature = graph.ndata['feature']
-                labels = graph.ndata['label']
-                train_mask = graph.ndata['train_mask']
-                test_mask = graph.ndata['test_mask']
-                valid_mask = graph.ndata['val_mask']
-                
-                src_rsr, dst_rsr = graph.adj_sparse('coo', etype = 'net_rsr')
-                src_rtr, dst_rtr = graph.adj_sparse('coo', etype = 'net_rtr')
-                src_rur, dst_rur = graph.adj_sparse('coo', etype = 'net_rur')
-                src_homo = torch.cat([src_rsr, src_rtr, src_rur])
-                dst_homo = torch.cat([dst_rsr, dst_rtr, dst_rur])
-                
-                yelp_graph = dgl.heterograph({('r', 'homo', 'r'): (src_homo, dst_homo), ('r', 's', 'r'): (src_rsr, dst_rsr), ('r', 't', 'r'): (src_rtr, dst_rtr), ('r', 'u', 'r'): (src_rur, dst_rur)})
-                
-                yelp_graph.ndata['feature'] = feature
-                yelp_graph.ndata['label'] = labels
-                yelp_graph.ndata['train_mask'] = train_mask
-                yelp_graph.ndata['test_mask'] = test_mask
-                yelp_graph.ndata['valid_mask'] = valid_mask
-                
-                
-                index = list(range(len(labels)))
-
-                idx_train, idx_rest, y_train, y_rest = train_test_split(index, labels[index], stratify=labels[index],
-                                                                        train_size=0.4,
-                                                                        random_state=2, shuffle=True)
-                idx_valid, idx_test, y_valid, y_test = train_test_split(idx_rest, y_rest, stratify=y_rest,
-                                                                        test_size=0.67,
-                                                                        random_state=2, shuffle=True)
-                train_mask = torch.zeros([len(labels)]).bool()
-                valid_mask = torch.zeros([len(labels)]).bool()
-                test_mask = torch.zeros([len(labels)]).bool()
-
-                train_mask[idx_train] = 1
-                valid_mask[idx_valid] = 1
-                test_mask[idx_test] = 1
-            
-
-                graph = generate_edge_labels(yelp_graph, idx_train, idx_test, idx_valid) 
-                
-                dgl.save_graphs('yelp.dgl', graph)
-                
-        elif name == 'amazon':
-            
-                dataset = FraudAmazonDataset()
-                graph = dataset[0]
-            
-                
-                graph.ndata['label'] = graph.ndata['label'].long().squeeze(-1)
-                graph.ndata['feature'] = graph.ndata['feature'].float()
-                print(graph)
-                
-                feature = graph.ndata['feature']
-                labels = graph.ndata['label']
-                train_mask = graph.ndata['train_mask']
-                test_mask = graph.ndata['test_mask']
-                valid_mask = graph.ndata['val_mask']
-                
-                src_upu, dst_upu = graph.adj_sparse('coo', etype = 'net_upu')
-                src_usu, dst_usu = graph.adj_sparse('coo', etype = 'net_usu')
-                src_uvu, dst_uvu = graph.adj_sparse('coo', etype = 'net_uvu')
-                src_homo = torch.cat([src_upu, src_usu, src_uvu])
-                dst_homo = torch.cat([dst_upu, dst_usu, dst_uvu])
-                
-                amazon_graph = dgl.heterograph({('r', 'homo', 'r'): (src_homo, dst_homo), ('r', 'p', 'r'): (src_upu, dst_upu), ('r', 's', 'r'): (src_usu, dst_usu), ('r', 'v', 'r'): (src_uvu, dst_uvu)})
-                
-                amazon_graph.ndata['feature'] = feature
-                amazon_graph.ndata['label'] = labels
-                amazon_graph.ndata['train_mask'] = train_mask
-                amazon_graph.ndata['test_mask'] = test_mask
-                amazon_graph.ndata['valid_mask'] = valid_mask
-                
-                
-                
-                index = list(range(3305, len(labels)))
-                
-                idx_train, idx_rest, y_train, y_rest = train_test_split(index, labels[index], stratify=labels[index], train_size=0.4, random_state=2, shuffle=True)
-                idx_valid, idx_test, y_valid, y_test = train_test_split(idx_rest, y_rest, stratify=y_rest, test_size=0.67, random_state=2, shuffle=True)
-                train_mask = torch.zeros([len(labels)]).bool()
-                valid_mask = torch.zeros([len(labels)]).bool()
-                test_mask = torch.zeros([len(labels)]).bool()
-
-                train_mask[idx_train] = 1
-                valid_mask[idx_valid] = 1
-                test_mask[idx_test] = 1
-                
-
-                graph = generate_edge_labels(amazon_graph, idx_train, idx_test, idx_valid) 
-             
-                dgl.save_graphs('amazon.dgl', graph)
-        
-        else:
-            print('no such dataset')
-            exit(1)
-
-        self.graph = graph
 
 def generate_edge_labels(graph, idx_train, idx_test, idx_valid):
     
     labels = graph.ndata['label']
-    src, dst = graph.edges(etype = 'homo')
-    edge_labels = []
-    edge_train_mask = []
-    edge_valid_mask = []
-    edge_test_mask = []
+    
+    edge_type_list = ["p", "s", "v", "homo"]
+    
+    for e in edge_type_list:
     
     
-    for i, j in zip(src, dst):
-        i = i.item()
-        j = j.item()
-        if labels[i] == labels[j]:
-            edge_labels.append(1)
-        else:
-            edge_labels.append(-1)
-        
-        if i in idx_train and j in idx_train:
-            edge_train_mask.append(1)
-        else:
-             edge_train_mask.append(0)
-             
-        if i in idx_valid and j in idx_valid:
-            edge_valid_mask.append(1)
-        else:
-             edge_valid_mask.append(0)
-             
-        if i in idx_test and j in idx_test:
-            edge_test_mask.append(1)
-        else:
-             edge_test_mask.append(0)
-
-    
-    edge_labels = torch.Tensor(edge_labels).long()
-    edge_train_mask = torch.Tensor(edge_train_mask).bool()
-    edge_valid_mask = torch.Tensor(edge_valid_mask).bool()
-    edge_test_mask = torch.Tensor(edge_test_mask).bool()
-    
-    graph.edges['homo'].data['edge_labels'] = edge_labels
-    graph.edges['homo'].data['edge_train_mask'] = edge_train_mask
-    graph.edges['homo'].data['edge_test_mask'] = edge_test_mask
-    graph.edges['homo'].data['edge_valid_mask'] = edge_valid_mask
+          src, dst = graph.edges(etype = e)
+          edge_labels = []
+          edge_train_mask = []
+          edge_valid_mask = []
+          edge_test_mask = []
+          
+          
+          for i, j in zip(src, dst):
+              i = i.item()
+              j = j.item()
+              if labels[i] == labels[j]:
+                  edge_labels.append(1)
+              else:
+                  edge_labels.append(-1)
+              
+              if i in idx_train and j in idx_train:
+                  edge_train_mask.append(1)
+              else:
+                   edge_train_mask.append(0)
+                   
+              if i in idx_valid and j in idx_valid:
+                  edge_valid_mask.append(1)
+              else:
+                   edge_valid_mask.append(0)
+                   
+              if i in idx_test and j in idx_test:
+                  edge_test_mask.append(1)
+              else:
+                   edge_test_mask.append(0)
+      
+          
+          edge_labels = torch.Tensor(edge_labels).long()
+          edge_train_mask = torch.Tensor(edge_train_mask).bool()
+          edge_valid_mask = torch.Tensor(edge_valid_mask).bool()
+          edge_test_mask = torch.Tensor(edge_test_mask).bool()
+          
+          graph.edges[e].data['edge_labels'] = edge_labels
+          graph.edges[e].data['edge_train_mask'] = edge_train_mask
+          graph.edges[e].data['edge_test_mask'] = edge_test_mask
+          graph.edges[e].data['edge_valid_mask'] = edge_valid_mask
     
     return graph
 
 
+            
+#dataset = FraudAmazonDataset()
+#graph = dataset[0]
+#            
+#print(graph)
+#
+#feature = graph.ndata['feature']
+#labels = graph.ndata['label']
+#train_mask = graph.ndata['train_mask']
+#test_mask = graph.ndata['test_mask']
+#valid_mask = graph.ndata['val_mask']
+#                
+#src_rsr, dst_rsr = graph.edge_type_subgraph(['net_upu']).edges()
+#src_rtr, dst_rtr = graph.edge_type_subgraph(['net_usu']).edges()
+#src_rur, dst_rur = graph.edge_type_subgraph(['net_uvu']).edges()
+#src_homo = torch.cat([src_rsr, src_rtr, src_rur])
+#dst_homo = torch.cat([dst_rsr, dst_rtr, dst_rur])
+#                
+#amazon_graph = dgl.heterograph({('u', 'homo', 'u'): (src_homo, dst_homo), ('u', 'p', 'u'): (src_rsr, dst_rsr), ('u', 's', 'u'): (src_rtr, dst_rtr), ('u', 'v', 'u'): (src_rur, dst_rur)})
+#print("amazon_graph:", amazon_graph)
+#                
+#amazon_graph.ndata['feature'] = feature
+#amazon_graph.ndata['label'] = labels
+#amazon_graph.ndata['train_mask'] = train_mask
+#amazon_graph.ndata['test_mask'] = test_mask
+#amazon_graph.ndata['valid_mask'] = valid_mask
+#                
+#print("amazon_graph ndata:", amazon_graph.ndata)
+#print("amazon_graph edata:", amazon_graph.edata)               
+#index = list(range(len(labels)))
+#
+#idx_train, idx_rest, y_train, y_rest = train_test_split(index, labels[index], stratify=labels[index],
+#                                                                        train_size=0.4,
+#                                                                        random_state=2, shuffle=True)
+#idx_valid, idx_test, y_valid, y_test = train_test_split(idx_rest, y_rest, stratify=y_rest,
+#                                                                        test_size=0.67,
+#                                                                        random_state=2, shuffle=True)
+#train_mask = torch.zeros([len(labels)]).bool()
+#valid_mask = torch.zeros([len(labels)]).bool()
+#test_mask = torch.zeros([len(labels)]).bool()
+#
+#train_mask[idx_train] = 1
+#valid_mask[idx_valid] = 1
+#test_mask[idx_test] = 1
+#            
+#print("start generating edge labels")
+#graph = generate_edge_labels(amazon_graph, idx_train, idx_test, idx_valid) 
+#print("finish edge labels!!!")                
+#dgl.save_graphs('amazon.dgl', graph)
+#                
+#graph = dgl.load_graphs("amazon.dgl")[0][0]   
+
+
+        
+def get_adj_list(graph):
+
+    adjacency_list = {}
+    
+    for node_id in range(graph.number_of_nodes()):
+  
+        neighbors = graph.successors(node_id)  
+    
+        neighbor_list = neighbors.tolist()
+    
+        adjacency_list[node_id] = neighbor_list
+    
+    return adjacency_list
+    
+    
+    
 
 def sparse_to_adjlist(sp_matrix):
 
@@ -186,11 +152,13 @@ def sparse_to_adjlist(sp_matrix):
 	return adj_lists
 
 
-def connection_domination(graph, adj_list):
+
+
+def connection_domination(graph):
     
     """ determine which types of connections are dominated in a given neighborhood """
-    src, dst = graph.edges(etype = 'homo')
-    edgeType = graph.edges['homo'].data['edgeType']
+    src, dst = graph.edges()
+    edgeType = graph.edata['edgeType']
     k = graph.number_of_nodes()
     h2_rate = []
     for i in range(0, k):
@@ -207,7 +175,7 @@ def connection_domination(graph, adj_list):
         hetero_rate = np.count_nonzero(result == -1)
         if (homo_rate > hetero_rate):
             rate = 1
-        elif(hetero_rate > homo_rate):
+        elif(hetero_rate >= homo_rate):
             rate = -1
         h2_rate.append(rate)
         
@@ -215,6 +183,6 @@ def connection_domination(graph, adj_list):
     h2_rate = torch.tensor(h2_rate)
     #print("h2_rate:", h2_rate, h2_rate.size())
     graph.ndata['h2_rate'] = h2_rate
-    dgl.save_graphs('amazon_completed.dgl', graph)
+    #dgl.save_graphs('amazon_completed.dgl', graph)
     return h2_rate, graph
 
