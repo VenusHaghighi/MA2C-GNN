@@ -48,10 +48,10 @@ class Edge_Labelling(nn.Module):
 
 
 
-class MA2C_GNN_Layer(nn.Module):
+class MAGNET_Layer(nn.Module):
     def __init__(self, in_channels, out_channels, d, graph):
         
-        super(MA2C_GNN_Layer, self).__init__()
+        super(MAGNET_Layer, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -182,7 +182,7 @@ class MA2C_GNN_Layer(nn.Module):
             
  
 
-class MA2C_GNN(nn.Module):
+class MAGNET(nn.Module):
     def __init__(self, in_channels, h_channels, num_classes, graph, d):
         super().__init__()
         self.graph = graph
@@ -194,8 +194,8 @@ class MA2C_GNN(nn.Module):
         self.linear4 = nn.Linear(h_channels, num_classes)
         self.act = nn.ReLU()
         self.d = d
-        self.conv1 = MA2C_GNN_Layer(self.in_channels, self.h_channels, self.d, self.graph)
-        self.conv2 = MA2C_GNN_Layer(self.h_channels, self.num_classes, self.d, self.graph)
+        self.conv1 = MAGNET_Layer(self.in_channels, self.h_channels, self.d, self.graph)
+        self.conv2 = MAGNET_Layer(self.h_channels, self.num_classes, self.d, self.graph)
 
     def forward(self, graph, feat, d):
         #h = self.linear(feat)

@@ -185,10 +185,10 @@ def get_best_f1(labels, probs):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='MA2C_GNN')
+    parser = argparse.ArgumentParser(description='MAGNET')
     parser.add_argument("--dataset", type=str, default="amazon",
                         help="Dataset for this model (yelp/amazon)")
-    parser.add_argument("--train_ratio", type=float, default=0.2, help="Training ratio")
+    parser.add_argument("--train_ratio", type=float, default=0.4, help="Training ratio")
     parser.add_argument("--hid_dim", type=int, default=64, help="Hidden layer dimension")
     parser.add_argument("--theta", type=int, default=3, help="Order theta in Beta Distribution")
     parser.add_argument("--epoch", type=int, default=100, help="The max number of epochs for graph_agnostic edge labeling module")
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     if args.run == 1:
         
-        model = MA2C_GNN(in_channels, h_channels, num_classes, graph, theta)
+        model = MAGNET(in_channels, h_channels, num_classes, graph, theta)
         
         final_tmf1, final_tauc, probs, preds, final_embed, test_mask = train_model(model, graph, graph_relation1, graph_relation2, graph_relation3, args)
         
